@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Creator Studio - DDOTT.TV</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase-config.js"></script>
+<script src="auth.js"></script>
+<script src="/cloudinary-config.js"></script>
+<script src="/studio-script.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; padding-bottom: 80px; }
+.header { padding: 16px 20px; border-bottom: 1px solid #1a1a1a; }
+.logo { font-size: 1rem; font-weight: bold; background: linear-gradient(90deg, #00f5ff, #bf00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.tabs { display: flex; border-bottom: 1px solid #1a1a1a; }
+.tab { flex: 1; padding: 14px; text-align: center; font-size: 0.85rem; color: #666; cursor: pointer; border-bottom: 2px solid transparent; }
+.tab.active { color: #00f5ff; border-bottom-color: #00f5ff; }
+.content { padding: 15px; }
+.upload-zone { border: 2px dashed #333; border-radius: 16px; padding: 40px 20px; text-align: center; margin-bottom: 20px; cursor: pointer; transition: all 0.3s; }
+.upload-zone.dragover { border-color: #00f5ff; background: #00f5ff11; }
+.upload-zone.success { border-color: #00ff88; background: #00ff8811; }
+.upload-icon { font-size: 3rem; margin-bottom: 10px; }
+.upload-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 5px; }
+.upload-sub { color: #666; font-size: 0.85rem; }
+.select-btn { margin-top: 15px; padding: 12px 24px; background: linear-gradient(90deg, #00f5ff, #bf00ff); border: none; border-radius: 10px; color: #fff; font-weight: bold; cursor: pointer; }
+.file-preview { background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 12px; padding: 14px; margin-bottom: 15px; display: flex; align-items: center; gap: 12px; }
+.file-icon { font-size: 1.5rem; }
+.file-info { flex: 1; }
+.file-name { font-size: 0.9rem; font-weight: 500; }
+.file-size { color: #666; font-size: 0.8rem; }
+.progress-bar { background: #1a1a1a; border-radius: 10px; height: 4px; margin-top: 8px; }
+.progress-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, #00f5ff, #bf00ff); transition: width 0.3s; }
+.section-title { color: #00f5ff; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }
+.input-group { margin-bottom: 15px; }
+.input-label { color: #888; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+input[type=text], textarea, select { width: 100%; background: #0d0d0d; border: 1px solid #222; border-radius: 10px; padding: 14px; color: #fff; font-size: 0.95rem; outline: none; font-family: inherit; }
+input[type=text]:focus, textarea:focus { border-color: #00f5ff; }
+textarea { resize: vertical; min-height: 80px; }
+select option { background: #0d0d0d; }
+.tags-input { display: flex; flex-wrap: wrap; gap: 8px; background: #0d0d0d; border: 1px solid #222; border-radius: 10px; padding: 10px; }
+.tag { background: #1a1a2e; border: 1px solid #00f5ff33; color: #00f5ff; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; }
+.tag-remove { cursor: pointer; color: #ff4444; }
+.tag-input { background: none; border: none; outline: none; color: #fff; font-size: 0.85rem; min-width: 80px; }
+.publish-btn { width: 100%; padding: 16px; background: linear-gradient(90deg, #00f5ff, #bf00ff); border: none; border-radius: 12px; color: #fff; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px; }
+.publish-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.success-card { background: #00ff8811; border: 1px solid #00ff8833; border-radius: 12px; padding: 20px; text-align: center; display: none; }
+.success-card.show { display: block; }
+.my-videos { display: flex; flex-direction: column; gap: 12px; }
+.video-card { background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 14px; overflow: hidden; display: flex; gap: 12px; padding: 12px; }
+.video-thumb { width: 80px; height: 60px; background: #1a1a2e; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+.video-info { flex: 1; min-width: 0; }
+.video-title { font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.video-meta { color: #666; font-size: 0.75rem; margin-top: 4px; }
+.video-stats { display: flex; gap: 10px; margin-top: 6px; font-size: 0.75rem; color: #888; }
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #0a0a0a; border-top: 1px solid #1a1a1a; display: flex; padding: 10px 0; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; color: #666; font-size: 0.65rem; cursor: pointer; text-decoration: none; }
+.nav-item.active { color: #00f5ff; }
+.nav-icon { font-size: 1.3rem; }
+.status-msg { text-align: center; padding: 12px; border-radius: 10px; margin-bottom: 15px; font-size: 0.9rem; display: none; }
+.status-msg.show { display: block; }
+.status-msg.success { background: #00ff8811; color: #00ff88; border: 1px solid #00ff8833; }
+.status-msg.error { background: #ff444411; color: #ff4444; border: 1px solid #ff444433; }
+.status-msg.loading { background: #00f5ff11; color: #00f5ff; border: 1px solid #00f5ff33; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="logo">DDOTT.TV</span> <span style="color:#fff; font-weight:bold;"> · Creator Studio</span>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('upload', this)">📤 Upload</div>
+  <div class="tab" onclick="showTab('myVideos', this)">🎬 My Videos</div>
+  <div class="tab" onclick="showTab('spotPay', this)">💰 Spot Pay</div>
+</div>
+
+<!-- Upload Tab -->
+<div id="uploadTab" class="content">
+  <div class="status-msg" id="statusMsg"></div>
+
+  <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+    <div class="upload-icon">🎬</div>
+    <div class="upload-title">Drop Your Video Here</div>
+    <div class="upload-sub">MP4, MOV, AVI · Max 50MB · Up to 4K</div>
+    <button class="select-btn" onclick="event.stopPropagation(); document.getElementById('fileInput').click()">📤 SELECT FILE</button>
+  </div>
+  <input type="file" id="fileInput" accept="video/*" style="display:none" onchange="handleFileSelect(this)">
+
+  <div class="file-preview" id="filePreview" style="display:none">
+    <div class="file-icon">🎥</div>
+    <div class="file-info">
+      <div class="file-name" id="fileName"></div>
+      <div class="file-size" id="fileSize"></div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+    <span id="fileStatus" style="color:#00ff88; font-weight:bold;"></span>
+  </div>
+
+  <div class="section-title">VIDEO DETAILS</div>
+
+  <div class="input-group">
+    <div class="input-label">TITLE</div>
+    <input type="text" id="videoTitle" placeholder="Give your video a killer title...">
+  </div>
+
+  <div class="input-group">
+    <div class="input-label">DESCRIPTION</div>
+    <textarea id="videoDesc" placeholder="Tell your audience what this is about..."></textarea>
+  </div>
+
+  <div class="input-group">
+    <div class="input-label">CATEGORY</div>
+    <select id="videoCategory">
+      <option value="web3">🌐 Web3 & Crypto</option>
+      <option value="tech">💻 Tech</option>
+      <option value="music">🎵 Music</option>
+      <option value="gaming">🎮 Gaming</option>
+      <option value="art">🎨 Art</option>
+      <option value="finance">💰 Finance</option>
+      <option value="lifestyle">✨ Lifestyle</option>
+      <option value="comedy">😂 Comedy</option>
+    </select>
+  </div>
+
+  <div class="input-group">
+    <div class="input-label">TAGS</div>
+    <div class="tags-input" id="tagsContainer">
+      <input class="tag-input" id="tagInput" placeholder="Add tag..." onkeypress="addTag(event)">
+    </div>
+  </div>
+
+  <div class="success-card" id="successCard">
+    <div style="font-size:2rem; margin-bottom:10px;">✅</div>
+    <div style="font-weight:bold; color:#00ff88; margin-bottom:5px;">Video Uploaded!</div>
+    <div style="color:#888; font-size:0.85rem;">Your video is now live on DDOTT.TV</div>
+  </div>
+
+  <button class="publish-btn" id="publishBtn" onclick="publishVideo()">🚀 PUBLISH VIDEO</button>
+</div>
+
+<!-- My Videos Tab -->
+<div id="myvideosTab" class="content" style="display:none">
+  <div class="section-title">MY VIDEOS</div>
+  <div class="my-videos" id="myVideosList">
+    <div style="color:#666; text-align:center; padding:30px;">Loading...</div>
+  </div>
+</div>
+
+<!-- Spot Pay Tab -->
+<div id="spotpayTab" class="content" style="display:none">
+  <div class="section-title">SPOT PAY</div>
+  <div style="background:#0d0d0d; border:1px solid #1a1a1a; border-radius:14px; padding:20px; text-align:center;">
+    <div style="font-size:2rem; margin-bottom:10px;">💰</div>
+    <div style="font-weight:bold; margin-bottom:5px;">Monetize Your Content</div>
+    <div style="color:#666; font-size:0.85rem;">Set a price for exclusive content. Fans pay with Emo Coins.</div>
+    <div style="margin-top:15px; padding:12px; background:#1a1a2e; border-radius:10px; color:#00f5ff;">Coming Soon 🚀</div>
+  </div>
+</div>
+
+
+
+
+</html>

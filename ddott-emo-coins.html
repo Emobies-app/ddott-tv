@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emo Coins - DDOTT.TV</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="auth.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; padding-bottom: 80px; }
+.header { padding: 20px; display: flex; align-items: center; justify-content: space-between; }
+.logo { font-size: 1.2rem; font-weight: bold; background: linear-gradient(90deg, #00f5ff, #bf00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.wallet-card { margin: 15px; background: linear-gradient(135deg, #1a0533, #0a1628); border: 1px solid #333; border-radius: 20px; padding: 25px; }
+.wallet-address { color: #00f5ff; font-size: 0.8rem; margin-bottom: 5px; }
+.wallet-title { color: #888; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+.coin-balance { font-size: 3.5rem; font-weight: bold; color: #fff; }
+.usd-value { color: #888; font-size: 0.9rem; margin: 5px 0 15px; }
+.level-badge { display: inline-flex; align-items: center; gap: 8px; background: #1a1a1a; border-radius: 20px; padding: 6px 14px; margin-bottom: 10px; font-size: 0.85rem; color: #ff6b35; }
+.progress-bar { background: #1a1a1a; border-radius: 10px; height: 6px; margin: 8px 0; }
+.progress-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, #00f5ff, #bf00ff); transition: width 0.5s; }
+.streak-badge { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #ff4444; border-radius: 20px; padding: 5px 12px; font-size: 0.8rem; color: #ff4444; }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 15px; }
+.stat-card { background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 14px; padding: 18px; }
+.stat-value { font-size: 1.8rem; font-weight: bold; }
+.stat-value.green { color: #00ff88; }
+.stat-value.red { color: #ff4444; }
+.stat-value.yellow { color: #ffd700; }
+.stat-value.cyan { color: #00f5ff; }
+.stat-label { color: #666; font-size: 0.8rem; margin-top: 5px; }
+.tabs { display: flex; padding: 0 15px; gap: 5px; margin-bottom: 15px; overflow-x: auto; }
+.tab { padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; white-space: nowrap; color: #666; }
+.tab.active { background: #1a1a2e; color: #00f5ff; border: 1px solid #00f5ff33; }
+.section { margin: 0 15px; }
+.section-title { color: #00f5ff; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; }
+.task-card { background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 14px; padding: 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; }
+.task-icon { width: 44px; height: 44px; border-radius: 10px; background: #1a1a2e; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+.task-info { flex: 1; }
+.task-name { font-size: 0.95rem; font-weight: 500; }
+.task-desc { color: #666; font-size: 0.8rem; margin-top: 3px; }
+.task-reward { color: #ffd700; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; gap: 5px; }
+.task-btn { background: #1a1a2e; border: 1px solid #00f5ff33; color: #00f5ff; padding: 8px 14px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; }
+.task-done { color: #00ff88; font-size: 1.2rem; }
+.convert-btn { width: calc(100% - 30px); margin: 15px; padding: 16px; background: linear-gradient(90deg, #00f5ff, #bf00ff); border: none; border-radius: 12px; color: #fff; font-weight: bold; font-size: 1rem; cursor: pointer; }
+.history-item { background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 12px; padding: 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+.history-desc { font-size: 0.9rem; }
+.history-time { color: #666; font-size: 0.75rem; margin-top: 3px; }
+.history-amount { font-weight: bold; }
+.history-amount.plus { color: #00ff88; }
+.history-amount.minus { color: #ff4444; }
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #0a0a0a; border-top: 1px solid #1a1a1a; display: flex; padding: 10px 0; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; color: #666; font-size: 0.65rem; cursor: pointer; text-decoration: none; }
+.nav-item.active { color: #ffd700; }
+.nav-icon { font-size: 1.3rem; }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+</head>
+<body>
+<div class="header">
+  <span class="logo">DDOTT.TV</span>
+  <span style="color:#ffd700; font-weight:bold;" id="headerCoins">⚡ ...</span>
+</div>
+
+<div class="wallet-card">
+  <div class="wallet-address" id="walletAddress">0x...loading</div>
+  <div class="wallet-title">MY DDOTT WALLET · TOTAL EMO COINS</div>
+  <div class="coin-balance" id="coinBalance">...</div>
+  <div class="usd-value" id="usdValue">≈ $... USD · 1 EMO = $0.005</div>
+  <div class="level-badge" id="levelBadge">🔥 Loading...</div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#666; margin-bottom:12px;">
+    <span id="progressText">...</span>
+  </div>
+  <div class="streak-badge" id="streakBadge">● Loading...</div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card"><div class="stat-value green" id="earnedToday">+0</div><div class="stat-label">Earned Today</div></div>
+  <div class="stat-card"><div class="stat-value yellow" id="allTimeEarned">0</div><div class="stat-label">All Time Earned</div></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('earn')">⚡ Earn</div>
+  <div class="tab" onclick="showTab('history')">📋 History</div>
+</div>
+
+<div id="earnTab" class="section">
+  <div class="section-title">DAILY TASKS</div>
+  <div class="task-card">
+    <div class="task-icon">📅</div>
+    <div class="task-info">
+      <div class="task-name">Daily Login</div>
+      <div class="task-desc" id="loginDesc">Claim your daily reward</div>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+      <div class="task-reward">+1 🪙</div>
+      <button class="task-btn" id="loginBtn" onclick="handleDailyLogin()">Claim</button>
+    </div>
+  </div>
+  <div class="task-card">
+    <div class="task-icon">▶️</div>
+    <div class="task-info">
+      <div class="task-name">Watch 30 Minutes</div>
+      <div class="task-desc">Watch videos to earn coins</div>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+      <div class="task-reward">+5 🪙</div>
+      <span style="color:#666; font-size:0.75rem;">In progress</span>
+    </div>
+  </div>
+  <div class="task-card">
+    <div class="task-icon">👍</div>
+    <div class="task-info">
+      <div class="task-name">Like 3 Videos</div>
+      <div class="task-desc">Show creators some love</div>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+      <div class="task-reward">+3 🪙</div>
+      <span style="color:#666; font-size:0.75rem;">In progress</span>
+    </div>
+  </div>
+</div>
+
+<div id="historyTab" class="section" style="display:none;">
+  <div class="section-title">TRANSACTION HISTORY</div>
+  <div id="historyList"><div style="color:#666; text-align:center; padding:20px;">Loading...</div></div>
+</div>
+
+<button class="convert-btn" onclick="window.open('https://thewall-web3-iie7.vercel.app','_blank')">
+  🔄 CONVERT VIA THEWALL
+</button>
+
+
+
+<script>
+let currentProfile = null
+
+const LEVELS = [
+  { name: 'Starter', min: 0, max: 100 },
+  { name: 'Creator', min: 100, max: 500 },
+  { name: 'Rising Star', min: 500, max: 1000 },
+  { name: 'Neon Creator', min: 1000, max: 2000 },
+  { name: 'Elite', min: 2000, max: 5000 },
+  { name: 'Legend', min: 5000, max: 10000 },
+  { name: 'Dwin Universe', min: 10000, max: 99999 }
+]
+
+function getLevel(coins) {
+  return LEVELS.find(l => coins >= l.min && coins < l.max) || LEVELS[0]
+}
+
+async function loadProfile() {
+  const profile = await getProfile()
+  if (!profile) {
+    const { data: { user } } = await db.auth.getUser();
+    if (!user) { window.location.href = 'ddott-login.html'; return; }
+    await db.from('profiles').insert({
+      id: user.id,
+      emo_coins: 0,
+      streak_days: 0,
+      earned_today: 0
+    });
+    profile = { emo_coins: 0, streak_days: 0, earned_today: 0 };
+  }
+  currentProfile = profile
+
+  const coins = profile.emo_coins || 0
+  const level = getLevel(coins)
+  const progress = ((coins - level.min) / (level.max - level.min)) * 100
+
+  document.getElementById('walletAddress').textContent = '0x...' + (profile.id || '').slice(-4)
+  document.getElementById('coinBalance').textContent = coins.toLocaleString()
+  document.getElementById('headerCoins').textContent = '⚡ ' + coins.toLocaleString()
+  document.getElementById('usdValue').textContent = `≈ $${(coins * 0.005).toFixed(2)} USD · 1 EMO = $0.005`
+  document.getElementById('levelBadge').textContent = `🔥 Level — ${level.name}`
+  document.getElementById('progressFill').style.width = progress + '%'
+  document.getElementById('progressText').textContent = `${coins} / ${level.max}`
+  document.getElementById('streakBadge').textContent = `● DAY ${profile.streak_days || 1} STREAK`
+  document.getElementById('earnedToday').textContent = '+' + (profile.earned_today || 0)
+
+  const today = new Date().toISOString().split('T')[0]
+  if (profile.last_login === today) {
+    document.getElementById('loginBtn').textContent = '✓ Claimed'
+    document.getElementById('loginBtn').disabled = true
+    document.getElementById('loginDesc').textContent = 'Claimed · Day ' + profile.streak_days + ' streak!'
+  }
+
+  loadHistory()
+}
+
+async function handleDailyLogin() {
+  const btn = document.getElementById('loginBtn')
+  btn.textContent = 'Claiming...'
+  btn.disabled = true
+  const result = await claimDailyLogin()
+  if (result.error) {
+    btn.textContent = '✓ Claimed'
+  } else {
+    btn.textContent = '✓ Claimed'
+    document.getElementById('loginDesc').textContent = `+${result.coins} coins! Day ${result.streak} streak!`
+    await loadProfile()
+  }
+}
+
+async function loadHistory() {
+  const { data: { user } } = await db.auth.getUser()
+  if (!user) return
+  const { data } = await db.from('emo_transactions')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  const list = document.getElementById('historyList')
+  if (!data || data.length === 0) {
+    list.innerHTML = '<div style="color:#666; text-align:center; padding:20px;">No transactions yet</div>'
+    return
+  }
+  list.innerHTML = data.map(t => `
+    <div class="history-item">
+      <div>
+        <div class="history-desc">${t.description || t.type}</div>
+        <div class="history-time">${new Date(t.created_at).toLocaleDateString()}</div>
+      </div>
+      <div class="history-amount ${t.amount > 0 ? 'plus' : 'minus'}">${t.amount > 0 ? '+' : ''}${t.amount} 🪙</div>
+    </div>
+  `).join('')
+}
+
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+  event.target.classList.add('active')
+  document.getElementById('earnTab').style.display = tab === 'earn' ? 'block' : 'none'
+  document.getElementById('historyTab').style.display = tab === 'history' ? 'block' : 'none'
+}
+
+loadProfile()
+</script>
+
+<script>
+// Real Supabase Emo Coins
+async function loadEmoCoins() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) { window.location.href = 'ddott-login.html'; return; }
+  
+  let { data, error } = await db
+    .from('emo_coins')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
+  
+  if (!data) {
+    const { data: newRow } = await db
+      .from('emo_coins')
+      .insert({ user_id: user.id, balance: 0 })
+      .select().single();
+    data = newRow;
+  }
+  
+  document.getElementById('balanceDisplay').textContent = 
+    data.balance.toLocaleString();
+  document.getElementById('allTimeEarned').textContent = (data.total_earned || 0).toLocaleString();
+}
+
+async function dailyClaim() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+  
+  const today = new Date().toISOString().split('T')[0];
+  
+  const { data } = await db
+    .from('emo_coins')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
+  
+  if (data.last_daily_claim === today) {
+    alert('Already claimed today!');
+    return;
+  }
+  
+  await db.from('emo_coins').update({
+    balance: data.balance + 1,
+    last_daily_claim: today,
+    total_earned: data.total_earned + 1,
+    updated_at: new Date().toISOString()
+  }).eq('user_id', user.id);
+  
+  loadEmoCoins();
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  await new Promise(r => setTimeout(r, 500));
+  if (typeof db === 'undefined') { console.log('db not ready'); return; }
+  loadEmoCoins();
+});
+</script>
+</body>
+</html>
